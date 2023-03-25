@@ -13,24 +13,25 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split 
 from sklearn import metrics
 
-#df = pandas.read_csv("./train_data.xlsx")
+
 df_train = pd.read_excel('./train_data.xlsx', sheet_name=['x','y', 'labels']) 
 df_test = pd.read_excel('./test_data_corrected.xlsx', sheet_name=['x','y', 'labels']) 
 
-#df_train['x'][]
 
-
-
-# Feature Selection
 '''
+# Feature Selection
 model = Lasso(alpha=0.1)
 model.fit(df_train['x'],df_train['y'])
 coefficients = pd.DataFrame(list(zip(df_train['x'].columns,model.coef_)), columns = ['predictor','coefficient'])
-coefficients_df = coefficients.loc[coefficients['coefficient'] != 0]
+coefficients_df = coefficients.loc[ abs(coefficients['coefficient']) > 0.9 ]
+#coefficients_df = coefficients.loc[:, ((coefficients['coefficient']>=0.5) || (coefficients['coefficient']<=0.5)).any()]
+
 predictors_to_keep = coefficients_df['predictor'].tolist()
 df_train['x'] = df_train['x'][predictors_to_keep]
 df_test['x'] = df_test['x'][predictors_to_keep]
+
 '''
+
 
 def dropColumns(df): 
     df['x'] = df['x'].drop(columns=[
@@ -84,7 +85,7 @@ def dropColumns(df):
     'Preculture Time [h]',
     'Start Preculture Perfusion [h after inoc] d1-d2',
     'Presence of  IWP2 [h]',
-    'Average DO concentration d0'
+    'Average DO concentration d0',
     ])
 
 
@@ -124,17 +125,16 @@ print("Gradient Boosting Regressor: ", mse4)
 
 
 # Artificial Neural Network
-ann = MLPRegressor(hidden_layer_sizes=(15),max_iter=100000,random_state=0)
+ann = MLPRegressor(hidden_layer_sizes=(1),max_iter=1000,random_state=0)
 model5 = ann.fit(X_train_std, df_train['y'])
 y_test_pred = model5.predict(X_test_std)
 mse5 = mean_squared_error(df_test['y'], y_test_pred)
 print("ANN: ", mse5)
 
 
-
 # Random Forest Regressor
-for i in range(2, 30): 
-    rf = RandomForestRegressor(n_estimators=200, max_depth=10, min_samples_split=8, min_samples_leaf=8, max_features=29, random_state=i)
+for i in range(2, 3): 
+    rf = RandomForestRegressor(n_estimators=200, max_depth=10, min_samples_split=8, min_samples_leaf=8, max_features=29, random_state=26)
     model3 = rf.fit(X_train_std, df_train['y'])
     y_test_pred = model3.predict(X_test_std)
     mse3 = mean_squared_error(df_test['y'], y_test_pred)
@@ -142,18 +142,21 @@ for i in range(2, 30):
     print(i)
 
 
+columns = ['testing', 'prediction']
+
+y_testing_classify = pd.DataFrame(columns=columns)
+y_testing_classify['testing'] = [1 if x >= 90 else 0 for x in df_test['y']['dd10 CM Content']]
+y_testing_classify['prediction'] = [1 if x >= 90 else 0 for x in y_test_pred]
 
 
+accuracy = metrics.accuracy_score(y_testing_classify['testing'], y_testing_classify['prediction'])
+precision = metrics.precision_score(y_testing_classify['testing'], y_testing_classify['prediction'],zero_division=0.0)
+recall = metrics.recall_score(y_testing_classify['testing'], y_testing_classify['prediction'])
+matthews_coefficient = metrics.matthews_corrcoef(y_testing_classify['testing'], y_testing_classify['prediction'])
 
 
-
-#plt.figure(figsize=(10,6))
-
-
-#plt.scatter(x=y_test_pred, y=df_test['y'], color='g')
-#plt.plot(x['Overall Average pH'], y_pred,color='k') 
-#plt.scatter(df_test['y'].index, df_test['y'].values, color='k')
-#plt.scatter(y_test_pred.index, y_test_pred.values, color='h')
-#plt.show()
-
+print("Accuracy: ", accuracy)
+print("Precision: ", precision)
+print("Recall: ", recall)
+print("Matthews Correlation Coefficient: ", matthews_coefficient)
 
