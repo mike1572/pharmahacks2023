@@ -5,7 +5,7 @@ import pandas as pd
 
 from sklearn.feature_selection import RFE
 from sklearn.neural_network import MLPRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor,RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, LogisticRegression
 from sklearn.metrics import mean_squared_error
@@ -16,6 +16,13 @@ from sklearn import metrics
 
 df_train = pd.read_excel('./train_data.xlsx', sheet_name=['x','y', 'labels']) 
 df_test = pd.read_excel('./test_data_corrected.xlsx', sheet_name=['x','y', 'labels']) 
+
+
+def addColumn(df): 
+    df['x']['dd5 2nd deriv'] = (((df['x']['dd7 Glucose Concentration'] - df['x']['dd5 Glucose Concentration'])/2) - ((df['x']['dd5 Glucose Concentration'] - df['x']['dd3 Glucose Concentration'])/2)) /4
+
+#addColumn(df_train)
+#addColumn(df_test)
 
 
 '''
@@ -32,10 +39,18 @@ df_test['x'] = df_test['x'][predictors_to_keep]
 
 '''
 
+'''
+randomforest = RandomForestClassifier(random_state=0)
+model = randomforest.fit(df_train['x'], df_train['y'])
+print(model.feature_importances_)
+print(pd.DataFrame(list(zip(df_train['x'].columns,model.feature_importances_)), columns =
+['predictor’,’feature importance']))
+
+'''
 
 def dropColumns(df): 
     df['x'] = df['x'].drop(columns=[
-    'dd0-dd1 Cell Density Gradient',
+    #'dd0-dd1 Cell Density Gradient',
     'dd1-dd2 Cell Density Gradient',
     'dd2-dd3 Cell Density Gradient',
     'dd3-dd5 Cell Density Gradient',
@@ -134,12 +149,12 @@ print("ANN: ", mse5)
 
 # Random Forest Regressor
 for i in range(2, 3): 
-    rf = RandomForestRegressor(n_estimators=200, max_depth=10, min_samples_split=8, min_samples_leaf=8, max_features=29, random_state=26)
+    rf = RandomForestRegressor(n_estimators=59, max_depth=10, min_samples_split=2, min_samples_leaf=8, max_features=29, random_state=20)
     model3 = rf.fit(X_train_std, df_train['y'])
     y_test_pred = model3.predict(X_test_std)
     mse3 = mean_squared_error(df_test['y'], y_test_pred)
-    print("Random Forest Regressor: ", mse3)
-    print(i)
+    print("Random Forest Regressor MSE: ", mse3)
+    #print(i)
 
 
 columns = ['testing', 'prediction']
