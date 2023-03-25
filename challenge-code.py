@@ -17,6 +17,21 @@ from sklearn import metrics
 df_train = pd.read_excel('./train_data.xlsx', sheet_name=['x','y', 'labels']) 
 df_test = pd.read_excel('./test_data_corrected.xlsx', sheet_name=['x','y', 'labels']) 
 
+#df_train['x'][]
+
+
+
+# Feature Selection
+'''
+model = Lasso(alpha=0.1)
+model.fit(df_train['x'],df_train['y'])
+coefficients = pd.DataFrame(list(zip(df_train['x'].columns,model.coef_)), columns = ['predictor','coefficient'])
+coefficients_df = coefficients.loc[coefficients['coefficient'] != 0]
+predictors_to_keep = coefficients_df['predictor'].tolist()
+df_train['x'] = df_train['x'][predictors_to_keep]
+df_test['x'] = df_test['x'][predictors_to_keep]
+'''
+
 def dropColumns(df): 
     df['x'] = df['x'].drop(columns=[
     'dd0-dd1 Cell Density Gradient',
@@ -76,7 +91,6 @@ def dropColumns(df):
 dropColumns(df_train)
 dropColumns(df_test)
 
-
 # Standardize the data
 scaler = StandardScaler()
 X_train_std = scaler.fit_transform(df_train['x'])
@@ -100,13 +114,6 @@ y_test_pred = model2.predict(X_test_std)
 mse2 = mean_squared_error(df_test['y'], y_test_pred)
 print("Lasso: ", mse2)
 
-# Random Forest Regressor
-rfr = RandomForestRegressor(max_depth=(10), random_state=1, n_estimators=250)
-model3 = rfr.fit(X_train_std, df_train['y'])
-y_test_pred = model3.predict(X_test_std)
-mse3 = mean_squared_error(df_test['y'], y_test_pred)
-print("Random Forest Regressor: ", mse3)
-
 
 # Gradient Boosting Regressor
 gbt = GradientBoostingRegressor(random_state=0, n_estimators=200)
@@ -124,24 +131,29 @@ mse5 = mean_squared_error(df_test['y'], y_test_pred)
 print("ANN: ", mse5)
 
 
-model = Lasso(alpha=0.01)
-model.fit(X_train_std,df_train['y'])
-model.coef_
-#pd.DataFrame(list(zip(X_train_std.columns,model.coef_)), columns = ['predictor','coefficient'])
+
+# Random Forest Regressor
+for i in range(2, 30): 
+    rf = RandomForestRegressor(n_estimators=200, max_depth=10, min_samples_split=8, min_samples_leaf=8, max_features=29, random_state=i)
+    model3 = rf.fit(X_train_std, df_train['y'])
+    y_test_pred = model3.predict(X_test_std)
+    mse3 = mean_squared_error(df_test['y'], y_test_pred)
+    print("Random Forest Regressor: ", mse3)
+    print(i)
 
 
 
 
-plt.figure(figsize=(10,6))
 
 
-print(x.shape[0])
-print(y.shape[0])
+
+#plt.figure(figsize=(10,6))
+
 
 #plt.scatter(x=y_test_pred, y=df_test['y'], color='g')
 #plt.plot(x['Overall Average pH'], y_pred,color='k') 
-plt.scatter(df_test['y'].index, df_test['y'].values, color='k')
-plt.scatter(y_test_pred.index, y_test_pred.values, color='h')
-plt.show()
+#plt.scatter(df_test['y'].index, df_test['y'].values, color='k')
+#plt.scatter(y_test_pred.index, y_test_pred.values, color='h')
+#plt.show()
 
 
