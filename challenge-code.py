@@ -4,8 +4,8 @@
 import pandas as pd
 
 from sklearn.feature_selection import RFE
-from sklearn.neural_network import MLPRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor,RandomForestClassifier
+from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor,RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, LogisticRegression
 from sklearn.metrics import mean_squared_error
@@ -24,9 +24,29 @@ def addColumn(df):
 #addColumn(df_train)
 #addColumn(df_test)
 
+print(df_test['y']['dd10 CM Content'])
+
+df_train['y']['dd10 CM Content']  = [1 if x >= 90 else 0 for x in df_train['y']['dd10 CM Content']]
+df_test['y']['dd10 CM Content']  = [1 if x >= 90 else 0 for x in df_test['y']['dd10 CM Content']]
+
 
 '''
+
 # Feature Selection
+
+
+lr = LogisticRegression(max_iter=5000)
+rfe = RFE(lr, n_features_to_select=3)
+model = rfe.fit(df_train['x'], df_train['y'])
+#model.ranking_
+coef = pd.DataFrame(list(zip(df_train['x'].columns,model.ranking_)), columns = ['predictor','ranking'])
+
+coefficients_df = coef.loc[coef['ranking']>=40]
+predictors_to_keep = coefficients_df['predictor'].tolist()
+df_train['x'] = df_train['x'][predictors_to_keep]
+df_test['x'] = df_test['x'][predictors_to_keep]
+
+
 model = Lasso(alpha=0.1)
 model.fit(df_train['x'],df_train['y'])
 coefficients = pd.DataFrame(list(zip(df_train['x'].columns,model.coef_)), columns = ['predictor','coefficient'])
@@ -37,16 +57,18 @@ predictors_to_keep = coefficients_df['predictor'].tolist()
 df_train['x'] = df_train['x'][predictors_to_keep]
 df_test['x'] = df_test['x'][predictors_to_keep]
 
-'''
 
-'''
 randomforest = RandomForestClassifier(random_state=0)
 model = randomforest.fit(df_train['x'], df_train['y'])
 print(model.feature_importances_)
 print(pd.DataFrame(list(zip(df_train['x'].columns,model.feature_importances_)), columns =
 ['predictor’,’feature importance']))
 
+
 '''
+
+
+
 
 def dropColumns(df): 
     df['x'] = df['x'].drop(columns=[
@@ -70,13 +92,19 @@ def dropColumns(df):
     'DO gradient/cell count dd7',
     'dd0 Average of 2nd derivative DO',
     'dd1 Average of 2nd derivative DO',
+    
+    # Better Recall, Worst Precision
     'dd2 Average of 2nd derivative DO',
+    
     'dd3 Average of 2nd derivative DO',
     'dd5 Average of 2nd derivative DO',
     'dd7 Average of 2nd derivative DO',
     'dd0 DO 2nd derivative/cell count',
     'dd1 DO 2nd derivative/cell count',
+    
+    # Better Recall, Worst Precision
     'dd2 DO 2nd derivative/cell count',
+    
     'dd3 DO 2nd derivative/cell count',
     'dd5 DO 2nd derivative/cell count',
     'dd7 DO 2nd derivative/cell count',
@@ -112,6 +140,42 @@ scaler = StandardScaler()
 X_train_std = scaler.fit_transform(df_train['x'])
 X_test_std = scaler.fit_transform(df_test['x'])
 
+
+for i in range(2, 3):
+
+    algo = RandomForestClassifier(
+        random_state=10,
+        max_features=5,
+        n_estimators=100, 
+        max_depth=20, 
+        min_samples_split=2, 
+        min_samples_leaf=1,
+    )
+    
+    #algo = GradientBoostingClassifier(random_state=i,min_samples_split=5,n_estimators=150)
+    #algo = MLPClassifier(hidden_layer_sizes=(35),max_iter=1000, random_state=5)
+    
+    model1 = algo.fit(X_train_std, df_train['y'])
+    y_test_pred = model1.predict(X_test_std)
+    mse = mean_squared_error(df_test['y'], y_test_pred)
+    print(i)
+    print("Mean Squared Error: ", mse)
+    
+    accuracy = metrics.accuracy_score(df_test['y']['dd10 CM Content'], y_test_pred)
+    precision = metrics.precision_score(df_test['y']['dd10 CM Content'], y_test_pred,zero_division=0.0)
+    recall = metrics.recall_score(df_test['y']['dd10 CM Content'], y_test_pred)
+    matthews_coefficient = metrics.matthews_corrcoef(df_test['y']['dd10 CM Content'], y_test_pred)
+    confusion_matrix = metrics.confusion_matrix(df_test['y']['dd10 CM Content'], y_test_pred)
+    
+    print("Accuracy: ", accuracy)
+    print("Precision: ", precision)
+    print("Recall: ", recall)
+    print("Matthews Correlation Coefficient: ", matthews_coefficient)
+    print("Confusion Matrix: \n", confusion_matrix)
+    
+    
+
+'''
 
 # Simple Linear Regression
 lm = LinearRegression()
@@ -175,3 +239,4 @@ print("Precision: ", precision)
 print("Recall: ", recall)
 print("Matthews Correlation Coefficient: ", matthews_coefficient)
 
+'''
