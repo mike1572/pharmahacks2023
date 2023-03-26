@@ -2,11 +2,12 @@
 # Code challenge PharmaHacks
 
 import pandas as pd
+import numpy as np
 
 from sklearn.feature_selection import RFE
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor,RandomForestClassifier, GradientBoostingClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, LogisticRegression
 from sklearn.metrics import mean_squared_error
 from matplotlib import pyplot as plt
@@ -31,9 +32,7 @@ df_test['y']['dd10 CM Content']  = [1 if x >= 90 else 0 for x in df_test['y']['d
 
 
 '''
-
 # Feature Selection
-
 
 lr = LogisticRegression(max_iter=5000)
 rfe = RFE(lr, n_features_to_select=3)
@@ -92,10 +91,7 @@ def dropColumns(df):
     'DO gradient/cell count dd7',
     'dd0 Average of 2nd derivative DO',
     'dd1 Average of 2nd derivative DO',
-    
-    # Better Recall, Worst Precision
-    'dd2 Average of 2nd derivative DO',
-    
+    'dd2 Average of 2nd derivative DO', 
     'dd3 Average of 2nd derivative DO',
     'dd5 Average of 2nd derivative DO',
     'dd7 Average of 2nd derivative DO',
@@ -103,7 +99,7 @@ def dropColumns(df):
     'dd1 DO 2nd derivative/cell count',
     
     # Better Recall, Worst Precision
-    'dd2 DO 2nd derivative/cell count',
+    #'dd2 DO 2nd derivative/cell count',
     
     'dd3 DO 2nd derivative/cell count',
     'dd5 DO 2nd derivative/cell count',
@@ -137,12 +133,14 @@ dropColumns(df_test)
 
 # Standardize the data
 scaler = StandardScaler()
+#scaler = MinMaxScaler()
 X_train_std = scaler.fit_transform(df_train['x'])
 X_test_std = scaler.fit_transform(df_test['x'])
 
 
+# Loop to test for optimal paramters that will give us the highest accuracy
 for i in range(2, 3):
-
+    
     algo = RandomForestClassifier(
         random_state=10,
         max_features=5,
@@ -152,6 +150,7 @@ for i in range(2, 3):
         min_samples_leaf=1,
     )
     
+  
     #algo = GradientBoostingClassifier(random_state=i,min_samples_split=5,n_estimators=150)
     #algo = MLPClassifier(hidden_layer_sizes=(35),max_iter=1000, random_state=5)
     
@@ -159,7 +158,7 @@ for i in range(2, 3):
     y_test_pred = model1.predict(X_test_std)
     mse = mean_squared_error(df_test['y'], y_test_pred)
     print(i)
-    print("Mean Squared Error: ", mse)
+
     
     accuracy = metrics.accuracy_score(df_test['y']['dd10 CM Content'], y_test_pred)
     precision = metrics.precision_score(df_test['y']['dd10 CM Content'], y_test_pred,zero_division=0.0)
@@ -167,11 +166,36 @@ for i in range(2, 3):
     matthews_coefficient = metrics.matthews_corrcoef(df_test['y']['dd10 CM Content'], y_test_pred)
     confusion_matrix = metrics.confusion_matrix(df_test['y']['dd10 CM Content'], y_test_pred)
     
+    print("Including predictor dd2 DO 2nd derivative/cell count")
+    print("Mean Squared Error: ", mse)
     print("Accuracy: ", accuracy)
     print("Precision: ", precision)
     print("Recall: ", recall)
     print("Matthews Correlation Coefficient: ", matthews_coefficient)
     print("Confusion Matrix: \n", confusion_matrix)
+        
+    # Plot the Confusion Matrix
+
+    # Define the data
+    values = [confusion_matrix[0][0], confusion_matrix[0][1], confusion_matrix[1][0], confusion_matrix[1][1]]
+    
+    # Define the labels for the x-axis
+    labels = ['True Negatives', 'False Positives', 'False Negatives', 'True Positives']
+    
+    # Create the bar chart
+    fig, ax = plt.subplots()
+    ax.bar(labels, values, color='red')
+    
+    # Add a title
+    ax.set_title("Confusion Matrix With 'dd2 DO 2nd derivative/cell count' Excluded as Predictor") 
+    # Add labels to the axes
+    ax.set_ylabel('Amount')
+   
+
+    # Show the plot
+    plt.show()
+
+    
     
     
 
