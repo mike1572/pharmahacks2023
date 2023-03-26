@@ -25,7 +25,7 @@ def addColumn(df):
 #addColumn(df_train)
 #addColumn(df_test)
 
-print(df_test['y']['dd10 CM Content'])
+#print(df_test['y']['dd10 CM Content'])
 
 df_train['y']['dd10 CM Content']  = [1 if x >= 90 else 0 for x in df_train['y']['dd10 CM Content']]
 df_test['y']['dd10 CM Content']  = [1 if x >= 90 else 0 for x in df_test['y']['dd10 CM Content']]
@@ -175,7 +175,7 @@ for i in range(2, 3):
     print("Confusion Matrix: \n", confusion_matrix)
         
     # Plot the Confusion Matrix
-
+    
     # Define the data
     values = [confusion_matrix[0][0], confusion_matrix[0][1], confusion_matrix[1][0], confusion_matrix[1][1]]
     
